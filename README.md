@@ -63,6 +63,9 @@ Point it at someone else's loop, or a whole directory of them:
 loopforge lint path/to/loops/     # finds every loop.toml / *.loop.toml and grades each
 ```
 
+📖 **Hands-on tour: [docs/walkthrough.md](docs/walkthrough.md)** — scaffold a loop, break it to see
+each block flagged, wire a real verify step, run it safely, and gate it in CI.
+
 ## What it catches
 
 A loop that *looks* fine — it's on a schedule and it calls an agent — but isn't:
