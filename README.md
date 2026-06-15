@@ -167,6 +167,33 @@ post are people who got a surprise bill. Two honest limits:
   must exist. The point of a loop is to pull *you* out of the repetitive parts — while judgment,
   acceptance, and the brake stay in your hands.
 
+## Gate it in CI
+
+A ready-made GitHub Action ships in this repo (`action.yml`) — lint your loop definitions on every
+PR so a loop can't regress into a runaway unnoticed:
+
+```yaml
+name: loops
+on: [push, pull_request]
+jobs:
+  loopforge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: yingchen-coding/loopforge@v0.1.0
+        with:
+          path: loops/        # dir of loop.toml files
+          fail-at: major
+          score: "true"
+```
+
+Or as a plain step:
+
+```yaml
+- run: pip install git+https://github.com/yingchen-coding/loopforge
+- run: loopforge lint loops/ --score
+```
+
 ## Why this exists
 
 Boris Cherny (Head of Claude Code) on his actual job: *"I write loops."* Addy Osmani (Google) wrote

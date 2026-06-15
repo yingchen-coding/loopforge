@@ -1,0 +1,39 @@
+name: "loopforge"
+description: "Lint agent loop definitions for the six blocks a real loop needs (trigger, isolation, skills, act, verify, memory)."
+author: "Ying Chen"
+branding:
+  icon: "repeat"
+  color: "purple"
+
+inputs:
+  path:
+    description: "File or directory of loop definitions to lint"
+    required: false
+    default: "."
+  fail-at:
+    description: "Minimum severity that fails the run (info|minor|major|critical)"
+    required: false
+    default: "major"
+  score:
+    description: "Show the A–F completeness grade"
+    required: false
+    default: "false"
+
+runs:
+  using: "composite"
+  steps:
+    - shell: bash
+      env:
+        LOOPFORGE_ACTION_PATH: ${{ github.action_path }}
+      run: python -m pip install --quiet "$LOOPFORGE_ACTION_PATH"
+    - shell: bash
+      env:
+        LOOPFORGE_PATH: ${{ inputs.path }}
+        LOOPFORGE_FAIL_AT: ${{ inputs.fail-at }}
+        LOOPFORGE_SCORE: ${{ inputs.score }}
+      run: |
+        extra=()
+        if [ "$LOOPFORGE_SCORE" = "true" ]; then
+          extra+=(--score)
+        fi
+        loopforge lint --fail-at "$LOOPFORGE_FAIL_AT" "${extra[@]}" "$LOOPFORGE_PATH"
