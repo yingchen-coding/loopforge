@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="420" viewBox="0 0 900 420" font-family="SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="14">
+  <rect x="0" y="0" width="900" height="420" rx="10" fill="#0d1117"/>
+  <rect x="0" y="0" width="900" height="38" rx="10" fill="#161b22"/>
+  <rect x="0" y="28" width="900" height="10" fill="#161b22"/>
+  <circle cx="22" cy="19" r="6" fill="#ff5f56"/>
+  <circle cx="42" cy="19" r="6" fill="#ffbd2e"/>
+  <circle cx="62" cy="19" r="6" fill="#27c93f"/>
+  <text x="450" y="23" text-anchor="middle" fill="#6e7681" font-size="12">loopforge — you wrote a cron job and called it a loop</text>
+
+  <text x="24" y="70"><tspan fill="#3fb950">$ </tspan><tspan fill="#c9d1d9">loopforge lint nightly-cleanup/</tspan><tspan fill="#6e7681">   # looks like a loop. is it?</tspan></text>
+
+  <text x="24" y="100" fill="#c9d1d9">nightly-cleanup</text>
+  <text x="40" y="124"><tspan fill="#f85149">✖ critical  L002  </tspan><tspan fill="#c9d1d9">No brake — it can loop and burn budget forever</tspan></text>
+  <text x="40" y="146"><tspan fill="#e3b341">✖ major     L004  </tspan><tspan fill="#c9d1d9">No verification — the agent grades its own homework</tspan></text>
+  <text x="40" y="168"><tspan fill="#e3b341">✖ major     L003  </tspan><tspan fill="#c9d1d9">No memory — the model forgets between every iteration</tspan></text>
+  <text x="40" y="190"><tspan fill="#e3b341">✖ major     L009  </tspan><tspan fill="#c9d1d9">No handback — nothing ever returns control to a human</tspan></text>
+  <text x="24" y="216"><tspan fill="#f85149">→ completeness: F (0/100)</tspan><tspan fill="#6e7681">   it's a timer that calls an agent — 4 of 6 blocks missing</tspan></text>
+
+  <text x="24" y="260"><tspan fill="#3fb950">$ </tspan><tspan fill="#c9d1d9">loopforge init ci-green</tspan><tspan fill="#6e7681">   &amp;&amp;   </tspan><tspan fill="#c9d1d9">loopforge lint ci-green/</tspan></text>
+  <text x="24" y="284"><tspan fill="#3fb950">✓ complete </tspan><tspan fill="#c9d1d9">— all six blocks present · completeness: </tspan><tspan fill="#3fb950" font-weight="bold">A (100/100)</tspan></text>
+
+  <text x="24" y="328" fill="#6e7681" font-size="13">a real loop answers six questions:</text>
+  <text x="24" y="350" font-size="13"><tspan fill="#79c0ff">trigger</tspan><tspan fill="#6e7681"> · </tspan><tspan fill="#79c0ff">isolation</tspan><tspan fill="#6e7681"> · </tspan><tspan fill="#79c0ff">skills</tspan><tspan fill="#6e7681"> · </tspan><tspan fill="#79c0ff">act</tspan><tspan fill="#6e7681"> · </tspan><tspan fill="#79c0ff">verify</tspan><tspan fill="#6e7681"> · </tspan><tspan fill="#79c0ff">memory</tspan><tspan fill="#6e7681">   + a cost brake + a human brake</tspan></text>
+
+  <text x="24" y="388" fill="#6e7681" font-size="13">deterministic · zero-dependency · no API key — it refuses to even run a loop that can't stop</text>
+</svg>

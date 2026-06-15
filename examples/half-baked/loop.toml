@@ -1,0 +1,13 @@
+# A cron job wearing a loop costume. This is what most "loops" actually look like —
+# it runs on a timer and calls an agent, but it's missing most of what makes a loop work.
+# Run `loopforge lint examples/half-baked` to see exactly which blocks are missing.
+name = "nightly-cleanup"
+
+[trigger]
+type = "schedule"
+cron = "0 3 * * *"
+# no max_iterations, no budget anywhere → nothing can stop it (CRITICAL)
+
+[act]
+command = "claude -p {prompt}"
+# no skills, no memory, no verify, no isolation, no handback, no goal

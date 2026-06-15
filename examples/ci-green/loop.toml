@@ -1,0 +1,35 @@
+# A complete loop: keep main green. All six blocks + a cost brake + a human brake.
+name = "ci-green"
+goal = "Keep main green: when CI fails, find the cause, fix it, verify, and record the fix."
+
+[trigger]
+type = "schedule"
+cron = "*/30 * * * *"        # check every 30 minutes
+max_iterations = 15
+
+[isolation]
+mode = "worktree"
+
+[skills]
+files = ["skills/project.md"]
+
+[act]
+command = "claude -p {prompt}"
+prompt_file = "prompts/act.md"
+parallel = false
+
+[verify]
+command = "pytest -q"        # independent of act — a real test run, not self-review
+require = "exit-zero"
+
+[memory]
+file = "memory/ledger.md"
+
+[budget]
+max_tokens = 200000
+max_seconds = 1800
+max_cost_usd = 5.0
+
+[handback]
+on = ["budget-exceeded", "verify-failed-twice", "goal-reached", "needs-human"]
+notify = "echo"
