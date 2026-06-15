@@ -75,11 +75,12 @@ Now make `verify.command` identical to `act.command` (e.g. both `claude -p {prom
 Delete every limit — remove `trigger.max_iterations` and the whole `[budget]` table:
 
 ```bash
-# ✖ critical  L002  No brake of any kind — it can loop and burn budget forever.
+# ✖ critical  L002  No hard stop — a goal alone can loop forever; it can burn budget with no cap.
 ```
 
 `L002` is the only **critical** rule, on purpose: a loop that can't stop is the one failure that
-turns "unattended" into "expensive." Run `loopforge list-rules` to see the full catalog.
+turns "unattended" into "expensive." Note a goal (`until`) does *not* satisfy it — only a hard cap
+(iterations / time / cost) guarantees the loop stops. Run `loopforge list-rules` for the full catalog.
 
 ## 4. Wire a real verify step
 
@@ -133,7 +134,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: yingchen-coding/loopforge@v0.1.0
+      - uses: yingchen-coding/loopforge@v0.2.0
         with:
           path: loops/
           fail-at: major

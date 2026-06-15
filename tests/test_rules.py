@@ -65,6 +65,43 @@ def test_no_brake_at_all_is_critical_l002():
     assert l002 and l002[0].severity is Severity.CRITICAL
 
 
+def test_goal_alone_is_not_a_brake():
+    # an until-goal loop with no hard cap can loop forever if the goal is never met
+    text = (
+        without("budget")
+        .replace("max_iterations = 10\n", "")
+        .replace('cron = "*/30 * * * *"\n', "")
+        .replace('type = "schedule"', 'type = "until-goal"\nuntil = "all tests pass"')
+    )
+    assert "L002" in codes(text)
+
+
+def test_zero_iterations_is_not_a_brake():
+    text = without("budget").replace("max_iterations = 10", "max_iterations = 0")
+    assert "L002" in codes(text)
+
+
+def test_schedule_without_cron_flags_l011():
+    text = COMPLETE.replace('cron = "*/30 * * * *"\n', "")
+    findings = [f for f in lint_text(text).findings if f.code == "L011"]
+    assert findings and findings[0].severity is Severity.MAJOR
+
+
+def test_unknown_trigger_type_flags_l011():
+    text = COMPLETE.replace('type = "schedule"', 'type = "scheduled"')  # typo
+    findings = [f for f in lint_text(text).findings if f.code == "L011"]
+    assert findings and findings[0].severity is Severity.MINOR
+
+
+def test_until_goal_without_until_flags_l011():
+    text = COMPLETE.replace('type = "schedule"', 'type = "until-goal"')
+    assert "L011" in codes(text)
+
+
+def test_complete_loop_has_no_trigger_config_finding():
+    assert "L011" not in codes(COMPLETE)
+
+
 def test_missing_handback_flags_l009():
     assert "L009" in codes(without("handback"))
 

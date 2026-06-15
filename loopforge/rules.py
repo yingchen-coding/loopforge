@@ -34,6 +34,15 @@ def _has_any(table: dict[str, object], *keys: str) -> bool:
     return any(table.get(k) not in (None, "", [], {}) for k in keys)
 
 
+def _positive_int(table: dict[str, object], key: str) -> bool:
+    """True only for a real positive integer — not a string, not 0, not a bool (True is int 1)."""
+    value = table.get(key)
+    return isinstance(value, int) and not isinstance(value, bool) and value > 0
+
+
+_KNOWN_TRIGGERS = {"schedule", "event", "until-goal", "manual"}
+
+
 @rule("L001", "trigger: the loop can wake itself")
 def trigger_self_starting(loop: Loop) -> list[Finding]:
     trig = loop.table("trigger")
@@ -46,21 +55,25 @@ def trigger_self_starting(loop: Loop) -> list[Finding]:
     return []
 
 
-@rule("L002", "brake: the loop can stop")
+@rule("L002", "brake: the loop has a guaranteed hard stop")
 def has_a_brake(loop: Loop) -> list[Finding]:
     trig = loop.table("trigger")
     budget = loop.table("budget")
-    brakes = (
-        _has_any(trig, "max_iterations", "until")
-        or _has_any(budget, "max_iterations", "max_tokens", "max_seconds", "max_cost_usd")
+    # A goal (`until`) is NOT a brake — if it's never met the loop runs forever. Only a hard cap
+    # (iterations / time / token / cost) is guaranteed to fire.
+    hard_stop = (
+        _positive_int(trig, "max_iterations")
+        or _positive_int(budget, "max_iterations")
+        or _has_any(budget, "max_tokens", "max_seconds", "max_cost_usd")
     )
-    if not brakes:
+    if not hard_stop:
         return [Finding("L002", Severity.CRITICAL, "budget",
-                        "No brake of any kind — no iteration cap, no goal, no token/time/cost "
-                        "ceiling. This is the runaway every skeptic warns about: it can loop and "
-                        "burn budget forever with no condition that makes it stop.",
-                        "Add at least one limit: trigger.max_iterations, trigger.until (a goal), "
-                        "or a [budget] with max_tokens / max_seconds / max_cost_usd.")]
+                        "No hard stop — no iteration cap and no token/time/cost ceiling. A goal "
+                        "alone (`until`) does not count: if the goal is never met, the loop runs "
+                        "forever. This is the runaway every skeptic warns about.",
+                        "Add a guaranteed stop: trigger.max_iterations (a positive integer), or a "
+                        "[budget] with max_seconds / max_cost_usd / max_tokens. Keep your goal too — "
+                        "but the hard cap is what makes it stop.")]
     return []
 
 
@@ -140,7 +153,7 @@ def has_skills(loop: Loop) -> list[Finding]:
 def has_cost_ceiling(loop: Loop) -> list[Finding]:
     trig = loop.table("trigger")
     budget = loop.table("budget")
-    has_iter_cap = _has_any(trig, "max_iterations") or _has_any(budget, "max_iterations")
+    has_iter_cap = _positive_int(trig, "max_iterations") or _positive_int(budget, "max_iterations")
     has_cost = _has_any(budget, "max_tokens", "max_seconds", "max_cost_usd")
     # Only meaningful once a brake exists at all (L002 owns the no-brake-whatsoever case).
     if (has_iter_cap or _has_any(trig, "until")) and not has_cost:
@@ -173,6 +186,34 @@ def has_act_command(loop: Loop) -> list[Finding]:
                         "it to run each iteration.",
                         'Add [act] command = "claude -p {prompt}" (or any agent CLI) and a '
                         "prompt_file.")]
+    return []
+
+
+@rule("L011", "trigger: the trigger is actually wired up")
+def trigger_is_configured(loop: Loop) -> list[Finding]:
+    trig = loop.table("trigger")
+    if not trig:
+        return []  # L001 owns the missing-trigger case
+    ttype = str(trig.get("type", "")).strip().lower()
+    if ttype and ttype not in _KNOWN_TRIGGERS:
+        return [Finding("L011", Severity.MINOR, "trigger",
+                        f"Unknown trigger type {ttype!r} — looks like a typo, so nothing will wake "
+                        f"the loop. Expected one of: {', '.join(sorted(_KNOWN_TRIGGERS))}.",
+                        'Fix the type, e.g. type = "schedule".')]
+    if ttype == "schedule" and not trig.get("cron"):
+        return [Finding("L011", Severity.MAJOR, "trigger",
+                        "Schedule trigger with no `cron` — there's a type but no schedule, so it "
+                        "never fires.",
+                        'Add cron = "*/30 * * * *" (or your cadence).')]
+    if ttype == "event" and not _has_any(trig, "event", "source", "on"):
+        return [Finding("L011", Severity.MAJOR, "trigger",
+                        "Event trigger with no source — nothing says which event wakes it.",
+                        'Add the event source, e.g. on = "issue.opened" or source = "...".')]
+    if ttype == "until-goal" and not trig.get("until"):
+        return [Finding("L011", Severity.MAJOR, "trigger",
+                        "until-goal trigger with no `until` — there's no goal to run toward or stop "
+                        "at.",
+                        'Add until = "<the condition that means done>".')]
     return []
 
 

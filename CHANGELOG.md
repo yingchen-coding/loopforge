@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.0
+
+- **L002 now requires a *hard* stop.** A goal (`until`) no longer counts as a brake on its own — a
+  goal that's never met loops forever. The runaway check is satisfied only by a positive
+  `max_iterations` or a `[budget]` time/token/cost ceiling. A non-int or zero `max_iterations` no
+  longer counts either (it now agrees with the runner).
+- **New rule `L011` — trigger is actually wired up.** Catches a `schedule` trigger with no `cron`,
+  an `event` trigger with no source, an `until-goal` trigger with no `until`, and typo'd trigger
+  types (e.g. `"scheduled"`) that would silently never fire.
+- 56 tests (was 50).
+
 ## 0.1.0
 
 First release.

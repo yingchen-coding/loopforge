@@ -73,10 +73,9 @@ A loop that *looks* fine — it's on a schedule and it calls an agent — but is
 ```console
 $ loopforge lint nightly-cleanup/
 nightly-cleanup
-  ✖ critical  L002  No brake of any kind — no iteration cap, no goal, no token/time/cost ceiling.
-                    This is the runaway every skeptic warns about: it can loop and burn budget
-                    forever with no condition that makes it stop.
-        ↳ fix: Add trigger.max_iterations, trigger.until, or a [budget] with max_tokens / max_cost_usd.
+  ✖ critical  L002  No hard stop — no iteration cap and no token/time/cost ceiling. A goal alone
+                    (`until`) does not count: if the goal is never met, the loop runs forever.
+        ↳ fix: Add trigger.max_iterations, or a [budget] with max_seconds / max_cost_usd.
   ✖ major     L004  No verification step — the agent grades its own homework.
   ✖ major     L003  No memory ledger — the model forgets between iterations.
   ✖ major     L009  No handback — nothing ever returns control to a human.
@@ -142,7 +141,8 @@ $ loopforge list-rules
 | Code | Sev | What it catches |
 |------|-----|-----------------|
 | `L001` | major | trigger missing or manual — a loop you start by hand isn't a loop |
-| `L002` | **critical** | **no brake at all** — no iteration cap, goal, or token/time/cost ceiling (the runaway) |
+| `L002` | **critical** | **no hard stop** — no iteration cap or token/time/cost ceiling (a goal alone can loop forever) |
+| `L011` | minor/major | trigger declared but not wired — `schedule` with no `cron`, `event` with no source, typo'd type |
 | `L003` | major | no memory ledger — the model forgets every iteration |
 | `L004` | major | no verification — the agent grades its own homework |
 | `L005` | major | self-review — verify runs the same command/model as act |
@@ -183,7 +183,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: yingchen-coding/loopforge@v0.1.0
+      - uses: yingchen-coding/loopforge@v0.2.0
         with:
           path: loops/        # dir of loop.toml files
           fail-at: major
