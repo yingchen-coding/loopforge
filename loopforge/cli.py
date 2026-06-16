@@ -4,7 +4,7 @@ from __future__ import annotations
 import argparse
 import sys
 
-from . import __version__
+from . import __version__, schedule
 from .linter import lint_path
 from .models import LoopError, Severity, parse_loop
 from .report import render_human, render_json
@@ -44,6 +44,15 @@ def _build_parser() -> argparse.ArgumentParser:
     r.add_argument("--max-iterations", type=int, default=None, help="override the iteration cap")
 
     sub.add_parser("list-rules", help="print the rule catalog")
+
+    sched = sub.add_parser("schedule", help="install/list/remove a loop on the system scheduler (cron)")
+    sched_sub = sched.add_subparsers(dest="sched_cmd", required=True)
+    s_install = sched_sub.add_parser("install", help="add this loop's [trigger].cron to your crontab")
+    s_install.add_argument("path", help="path to a loop.toml")
+    s_install.add_argument("--dry-run", action="store_true", help="show the resulting crontab, don't write it")
+    sched_sub.add_parser("list", help="show loopforge-managed crontab entries")
+    s_remove = sched_sub.add_parser("remove", help="remove a scheduled loop by name")
+    s_remove.add_argument("name", help="the loop name")
     return p
 
 
@@ -97,6 +106,27 @@ def _cmd_run(args: argparse.Namespace) -> int:
     return 1 if result.handback_reason == "needs-human" else 0
 
 
+def _cmd_schedule(args: argparse.Namespace) -> int:
+    try:
+        if args.sched_cmd == "install":
+            line, crontab = schedule.install(args.path, dry_run=args.dry_run)
+            if args.dry_run:
+                print("# resulting crontab (dry-run, not written):\n" + crontab.rstrip())
+            else:
+                print(f"scheduled: {line}")
+                print("  (macOS: cron needs Full Disk Access to touch ~/Documents)")
+        elif args.sched_cmd == "list":
+            entries = schedule.installed()
+            print("\n".join(entries) if entries else "no loopforge-scheduled loops")
+        elif args.sched_cmd == "remove":
+            removed = schedule.uninstall(args.name)
+            print(f"removed {args.name}" if removed else f"no scheduled loop named {args.name}")
+    except LoopError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    return 0
+
+
 def _cmd_list_rules(_args: argparse.Namespace) -> int:
     for code, summary, _fn in sorted(all_rules()):
         print(f"{code}  {summary}")
@@ -110,6 +140,7 @@ def main(argv: list[str] | None = None) -> int:
         "init": _cmd_init,
         "run": _cmd_run,
         "list-rules": _cmd_list_rules,
+        "schedule": _cmd_schedule,
     }
     return dispatch[args.command](args)
 

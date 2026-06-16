@@ -184,7 +184,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: yingchen-coding/loopforge@v0.3.0
+      - uses: yingchen-coding/loopforge@v0.4.0
         with:
           path: loops/        # dir of loop.toml files
           fail-at: major
@@ -197,6 +197,23 @@ Or as a plain step:
 - run: pip install git+https://github.com/yingchen-coding/loopforge
 - run: loopforge lint loops/ --score
 ```
+
+## Schedule it
+
+A `[trigger].cron` is just metadata until something fires it. `loopforge schedule` installs it into
+your crontab so the loop runs on its own:
+
+```bash
+loopforge schedule install my-loop/loop.toml --dry-run   # preview the resulting crontab
+loopforge schedule install my-loop/loop.toml             # add it (Mondays 9am, etc.)
+loopforge schedule list                                  # show loopforge-managed entries
+loopforge schedule remove my-loop                        # take it off the schedule
+```
+
+Entries are tagged `# loopforge:<name>` and managed idempotently — re-installing replaces, it never
+duplicates. A **no-clobber guard** refuses to write if your current crontab can't be read, so your
+other cron jobs are never wiped. Only `type = "schedule"` loops (with a `cron`) can be installed.
+(macOS: cron needs Full Disk Access to run jobs that touch protected folders like `~/Documents`.)
 
 ## Compose with a reviewer
 

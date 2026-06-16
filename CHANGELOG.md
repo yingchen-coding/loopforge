@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.0
+
+- **`loopforge schedule`** — turn a loop's declarative `[trigger].cron` into a real cron entry, so a
+  scheduled loop actually fires. `schedule install <loop.toml>` (with `--dry-run`), `schedule list`,
+  `schedule remove <name>`. Entries are tagged `# loopforge:<name>` and managed idempotently. A hard
+  no-clobber guard refuses to write if the existing crontab can't be read, so it never wipes your
+  other jobs. (macOS: cron needs Full Disk Access to touch protected dirs.)
+
 ## 0.3.0
 
 - **Real worktree isolation in the runner.** When `[isolation] mode = "worktree"` and the loop is in
