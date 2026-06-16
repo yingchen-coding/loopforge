@@ -198,6 +198,22 @@ Or as a plain step:
 - run: loopforge lint loops/ --score
 ```
 
+## Compose with a reviewer
+
+loopforge is the loop *engine*; the `verify` step is any command, so a real reviewer can be the
+independent check. For agent definitions, pair it with [agentguard](https://github.com/yingchen-coding/agentguard)
+(a deterministic security linter for agents) — loopforge runs the loop, agentguard reviews the work:
+
+```toml
+[act]
+command = "claude -p {prompt}"          # the agent does the work
+[verify]
+command = "agentguard agents/ --fail-at critical"   # an independent reviewer gates it
+```
+
+Point one loop at a whole fleet of definition sets (agentguard takes multiple paths), and you have a
+loop that keeps every agent you own clean — the loop engine driving the reviewer, on a schedule.
+
 ## Why this exists
 
 Boris Cherny (Head of Claude Code) on his actual job: *"I write loops."* Addy Osmani (Google) wrote
