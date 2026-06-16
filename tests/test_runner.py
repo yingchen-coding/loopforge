@@ -1,3 +1,6 @@
+import subprocess
+from pathlib import Path
+
 import pytest
 
 from loopforge.models import LoopError
@@ -59,6 +62,67 @@ def test_verify_failed_twice_hands_back(tmp_path):
     result = run(p)
     assert result.handback_reason == "verify-failed-twice"
     assert result.iterations == 2
+
+
+def test_ledger_records_action_and_outcome_separately(tmp_path):
+    p = make_loop(tmp_path, act="echo DID-A-THING", verify="true")
+    run(p, max_iterations=1)
+    ledger = (p.parent / "memory" / "ledger.md").read_text()
+    assert "DID-A-THING" in ledger  # the summary column = what act did
+    assert "| ok |" in ledger or "| goal-reached |" in ledger  # distinct outcome column
+
+
+def test_reviewer_command_sees_act_output(tmp_path):
+    # verify has only a reviewer_command; the runner must pipe act's output to it
+    root = init("rev", tmp_path)
+    p = root / "loop.toml"
+    t = p.read_text()
+    t = t.replace('command = "claude -p {prompt}"', 'command = "echo HELLO"')
+    t = t.replace('command = "pytest -q"', 'reviewer_command = "grep HELLO"')
+    p.write_text(t)
+    result = run(p, max_iterations=1)
+    assert result.logs[0].verified is True  # reviewer found HELLO in the act output
+
+
+def test_reviewer_command_fails_when_output_is_wrong(tmp_path):
+    root = init("rev2", tmp_path)
+    p = root / "loop.toml"
+    t = p.read_text()
+    t = t.replace('command = "claude -p {prompt}"', 'command = "echo BYE"')
+    t = t.replace('command = "pytest -q"', 'reviewer_command = "grep HELLO"')
+    p.write_text(t)
+    result = run(p, max_iterations=1)
+    assert result.logs[0].verified is False  # reviewer did not find HELLO
+
+
+def test_worktree_isolation_runs_in_worktree_ledger_stays_home(tmp_path):
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    for args in (["init", "-q"], ["config", "user.email", "t@t"], ["config", "user.name", "t"]):
+        subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
+    root = init("iso", repo)  # scaffold uses isolation mode = worktree
+    p = root / "loop.toml"
+    t = p.read_text()
+    t = t.replace('command = "claude -p {prompt}"', 'command = "touch MARKER"')
+    t = t.replace('command = "pytest -q"', 'command = "true"')
+    p.write_text(t)
+    subprocess.run(["git", "-C", str(repo), "add", "-A"], check=True, capture_output=True)
+    subprocess.run(["git", "-C", str(repo), "commit", "-qm", "init"], check=True, capture_output=True)
+
+    result = run(p, max_iterations=1)
+    try:
+        assert result.worktree is not None
+        wt = Path(result.worktree)
+        assert wt.exists() and wt != root
+        assert (wt / "MARKER").exists()          # act executed inside the isolated worktree
+        assert not (root / "MARKER").exists()     # the original working tree was untouched
+        # memory is written back to the ORIGINAL repo so the record survives the worktree
+        assert "| 1 |" in (root / "memory" / "ledger.md").read_text()
+    finally:
+        subprocess.run(
+            ["git", "-C", str(repo), "worktree", "remove", "--force", str(wt.parent)],
+            capture_output=True,
+        )
 
 
 def test_max_iterations_override(tmp_path):

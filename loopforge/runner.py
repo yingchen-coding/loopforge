@@ -26,7 +26,8 @@ class IterationLog:
     index: int
     acted: bool
     verified: bool | None
-    note: str
+    summary: str   # what the act step did (first line of its output)
+    outcome: str   # the result of this iteration (ok / needs-human / verify-failed / goal-reached)
 
 
 @dataclass
@@ -37,6 +38,7 @@ class RunResult:
     handback_reason: str = ""
     logs: list[IterationLog] = field(default_factory=list)
     dry_run: bool = False
+    worktree: str | None = None  # isolated git worktree the run executed in, if any
 
 
 def _read_context(loop: Loop, root: Path) -> str:
@@ -91,6 +93,16 @@ def _run_command(command: str, prompt: str | None, cwd: Path, timeout: float | N
             tmp.unlink(missing_ok=True)
 
 
+def _first_line(text: str, limit: int = 80) -> str:
+    """First non-empty line of command output, made safe for a markdown table cell."""
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped:
+            safe = stripped.replace("|", "/")
+            return safe if len(safe) <= limit else safe[: limit - 1] + "…"
+    return ""
+
+
 def _append_ledger(loop: Loop, root: Path, log: IterationLog) -> None:
     mem = loop.table("memory").get("file")
     if not mem:
@@ -100,9 +112,38 @@ def _append_ledger(loop: Loop, root: Path, log: IterationLog) -> None:
         return
     when = _dt.datetime.now().strftime("%Y-%m-%d %H:%M")
     verified = "—" if log.verified is None else ("yes" if log.verified else "no")
-    row = f"| {when} | {log.index} | {log.note} | {verified} | {log.note} |\n"
+    row = f"| {when} | {log.index} | {log.summary} | {verified} | {log.outcome} |\n"
     with mp.open("a", encoding="utf-8") as fh:
         fh.write(row)
+
+
+def _git(root: Path, *args: str) -> tuple[int, str]:
+    proc = subprocess.run(  # noqa: S603,S607 - fixed git subcommands, no user input in argv[0]
+        ["git", "-C", str(root), *args], capture_output=True, text=True
+    )
+    return proc.returncode, (proc.stdout or "") + (proc.stderr or "")
+
+
+def _setup_worktree(loop: Loop, root: Path) -> Path | None:
+    """If isolation is 'worktree' and root is a git repo, create an isolated worktree to run in.
+
+    Returns the worktree path (left in place for the human to review and merge — the article's
+    "each agent works in its own space, you merge at the end"), or None to run in `root`.
+    """
+    if str(loop.table("isolation").get("mode", "")).strip().lower() != "worktree":
+        return None
+    rc, top = _git(root, "rev-parse", "--show-toplevel")
+    if rc != 0:
+        return None  # not a git repo — can't isolate; caller falls back to root
+    repo_top = Path(top.strip())
+    wt = Path(tempfile.mkdtemp(prefix="loopforge-wt-"))
+    branch = f"loopforge/{loop.name}-{int(time.time())}"
+    if _git(root, "worktree", "add", "-b", branch, str(wt))[0] != 0:
+        return None
+    # run at the loop's location *inside* the worktree, so relative paths still resolve
+    rel = root.resolve().relative_to(repo_top.resolve())
+    target = wt / rel
+    return target if target.exists() else wt
 
 
 def _cap(loop: Loop) -> int | None:
@@ -163,10 +204,17 @@ def run(
     act_cmd = loop.table("act").get("command")
     if not act_cmd:
         raise LoopError(f"{loop.name} has no [act] command to run")
-    verify_cmd = loop.table("verify").get("command") or loop.table("verify").get("reviewer_command")
+    verify = loop.table("verify")
+    verify_command = verify.get("command")
+    reviewer_command = verify.get("reviewer_command")
     max_seconds = loop.table("budget").get("max_seconds")
     deadline = time.monotonic() + max_seconds if isinstance(max_seconds, (int, float)) else None
 
+    # Isolation: act/verify run in a git worktree if requested; context (committed skills) and the
+    # memory ledger stay on the original repo so the record survives the worktree.
+    workdir = _setup_worktree(loop, root) or root
+    if workdir != root:
+        result.worktree = str(workdir)
     context = _read_context(loop, root)
     consecutive_failures = 0
 
@@ -177,16 +225,31 @@ def run(
             break
 
         remaining = deadline - time.monotonic() if deadline else None
-        rc, out = _run_command(act_cmd, context, root, remaining)
-        note = "needs-human" if "NEEDS-HUMAN" in out else f"act rc={rc}"
+        rc, out = _run_command(act_cmd, context, workdir, remaining)
 
+        # verify is independent: a `command` is a test/build (no prompt); a `reviewer_command` is a
+        # second model that must SEE the act output to review it.
         verified: bool | None = None
-        if verify_cmd:
-            vrc, _ = _run_command(verify_cmd, None, root, remaining)
+        if verify_command:
+            vrc, _ = _run_command(verify_command, None, workdir, remaining)
             verified = vrc == 0
+        elif reviewer_command:
+            vrc, _ = _run_command(reviewer_command, out, workdir, remaining)
+            verified = vrc == 0
+        if verified is not None:
             consecutive_failures = 0 if verified else consecutive_failures + 1
 
-        log = IterationLog(index=i, acted=rc == 0, verified=verified, note=note)
+        if "NEEDS-HUMAN" in out:
+            outcome = "needs-human"
+        elif verified and "GOAL-REACHED" in out:
+            outcome = "goal-reached"
+        elif verified is False:
+            outcome = "verify-failed"
+        else:
+            outcome = "ok"
+        summary = _first_line(out) or f"act rc={rc}"
+
+        log = IterationLog(index=i, acted=rc == 0, verified=verified, summary=summary, outcome=outcome)
         result.logs.append(log)
         result.iterations = i
         _append_ledger(loop, root, log)

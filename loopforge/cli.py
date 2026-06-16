@@ -92,6 +92,8 @@ def _cmd_run(args: argparse.Namespace) -> int:
         f"({result.iterations} iteration{'s' if result.iterations != 1 else ''}"
         f"{', ' + result.handback_reason if result.handback_reason else ''})"
     )
+    if result.worktree:
+        print(f"  isolated in: {result.worktree}  (review, merge, then `git worktree remove` it)")
     return 1 if result.handback_reason == "needs-human" else 0
 
 

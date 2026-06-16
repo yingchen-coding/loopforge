@@ -3,7 +3,7 @@ import json
 import pytest
 
 from loopforge.cli import main
-from tests.conftest import COMPLETE, without
+from tests.conftest import materialize_complete, without
 
 
 def write_loop(tmp_path, text):
@@ -13,7 +13,7 @@ def write_loop(tmp_path, text):
 
 
 def test_lint_clean_exits_zero(tmp_path, capsys):
-    write_loop(tmp_path, COMPLETE)
+    materialize_complete(tmp_path)
     assert main(["lint", str(tmp_path)]) == 0
     assert "complete" in capsys.readouterr().out
 
@@ -29,7 +29,7 @@ def test_lint_fail_at_critical_ignores_major(tmp_path):
 
 
 def test_lint_json_is_valid(tmp_path, capsys):
-    write_loop(tmp_path, COMPLETE)
+    materialize_complete(tmp_path)
     main(["lint", str(tmp_path), "--format", "json"])
     payload = json.loads(capsys.readouterr().out)
     assert payload["results"][0]["grade"] == "A"

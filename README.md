@@ -152,6 +152,7 @@ $ loopforge list-rules
 | `L009` | major | no handback — nothing returns control to a human |
 | `L010` | major | no act command — the loop does nothing |
 | `L012` | minor | no goal — can't tell progress from motion |
+| `L013` | major | referenced skills/memory/prompt file doesn't exist on disk |
 
 Only the runaway is `critical`, on purpose: a loop that can't stop is the one failure that turns
 "unattended" into "expensive." Everything else degrades quality; that one burns money.
@@ -183,7 +184,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: yingchen-coding/loopforge@v0.2.0
+      - uses: yingchen-coding/loopforge@v0.3.0
         with:
           path: loops/        # dir of loop.toml files
           fail-at: major

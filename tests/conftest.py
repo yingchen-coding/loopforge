@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 COMPLETE = """\
 name = "demo"
 goal = "Do the thing and verify it."
@@ -26,6 +28,18 @@ max_cost_usd = 2.0
 on = ["budget-exceeded", "needs-human"]
 notify = "echo"
 """
+
+
+def materialize_complete(directory: Path | str) -> Path:
+    """Write COMPLETE plus the skills/memory/prompt files it references, so a path-based lint sees a
+    genuinely clean loop (L013 checks that referenced files exist on disk)."""
+    d = Path(directory)
+    for sub, name in (("skills", "project.md"), ("memory", "ledger.md"), ("prompts", "act.md")):
+        (d / sub).mkdir(parents=True, exist_ok=True)
+        (d / sub / name).write_text("# placeholder\n", encoding="utf-8")
+    loop = d / "loop.toml"
+    loop.write_text(COMPLETE, encoding="utf-8")
+    return loop
 
 
 def without(block: str) -> str:

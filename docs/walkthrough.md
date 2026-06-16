@@ -113,8 +113,11 @@ When you run for real, loopforge:
 1. **Refuses** to start if the loop has a `critical` finding (no brake).
 2. Builds each iteration's prompt from `skills` + the `memory` ledger + `prompts/act.md`.
 3. Runs `act`, then the independent `verify`.
-4. Appends a row to `memory/ledger.md` — the repo remembers even after the process exits.
-5. Stops on: goal reached, verify failed twice, budget/iteration cap, or the agent saying
+4. If `isolation = "worktree"` and you're in a git repo, runs act/verify in an **isolated git
+   worktree** (its path is printed) so the original tree is untouched until you review and merge.
+5. Appends a row to `memory/ledger.md` — the repo remembers even after the process exits. The ledger
+   is written to the original repo, not the worktree, so the record survives.
+6. Stops on: goal reached, verify failed twice, budget/iteration cap, or the agent saying
    `NEEDS-HUMAN`, and hands back to you.
 
 > Honesty note: loopforge enforces the limits it can *measure* — iteration count and wall-clock
@@ -134,7 +137,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: yingchen-coding/loopforge@v0.2.0
+      - uses: yingchen-coding/loopforge@v0.3.0
         with:
           path: loops/
           fail-at: major

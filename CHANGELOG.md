@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.3.0
+
+- **Real worktree isolation in the runner.** When `[isolation] mode = "worktree"` and the loop is in
+  a git repo, `run` now executes act/verify in an isolated `git worktree` (left in place for you to
+  review and merge), while the memory ledger is written back to the original repo so the record
+  survives. Previously isolation was linted but ignored by the runner — a describe-vs-do gap, now
+  closed. The worktree path is reported in the run output.
+- **`reviewer_command` now receives the act output.** A second-model review can finally *see* the
+  work it's reviewing (it was being run with no input).
+- **Memory ledger fixed.** Each iteration now records a distinct *action summary* (what act did) and
+  *outcome* — previously both columns held the same string.
+- **New rule `L013` — referenced files exist.** Flags `skills` / `memory` / `prompt_file` paths in
+  `loop.toml` that don't exist on disk (only when linting a real file). Catches the typo'd path the
+  runner would otherwise load as "(MISSING)".
+- 63 tests (was 56).
+
 ## 0.2.0
 
 - **L002 now requires a *hard* stop.** A goal (`until`) no longer counts as a brake on its own — a

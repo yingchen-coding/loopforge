@@ -227,6 +227,28 @@ def has_goal(loop: Loop) -> list[Finding]:
     return []
 
 
+@rule("L013", "files: referenced skills/memory/prompt files exist")
+def referenced_files_exist(loop: Loop) -> list[Finding]:
+    # Only checkable when we linted a real file on disk (lint of raw text has no directory to resolve
+    # against). Catches a typo'd path the runner would silently load as "(MISSING)".
+    if loop.path is None:
+        return []
+    root = loop.path.parent
+    referenced: list[str] = list(loop.table("skills").get("files", []) or [])
+    for table, key in (("memory", "file"), ("act", "prompt_file")):
+        value = loop.table(table).get(key)
+        if isinstance(value, str) and value:
+            referenced.append(value)
+    missing = [rel for rel in referenced if not (root / rel).exists()]
+    if missing:
+        return [Finding("L013", Severity.MAJOR, "files",
+                        f"Referenced file(s) not found: {', '.join(missing)}. The loop points at "
+                        "skills/memory/prompt files that don't exist, so the runner loads nothing "
+                        "(skills) or can't record (memory) — a silently degraded loop.",
+                        "Create the file(s) or fix the path(s) in loop.toml to match what's on disk.")]
+    return []
+
+
 def all_rules() -> list[tuple[str, str, Rule]]:
     return list(_REGISTRY)
 
