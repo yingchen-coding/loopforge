@@ -1,0 +1,5 @@
+id,match,predicted,actual,prob,stake,odds,result
+fra-ivc,France vs Ivory Coast,win,win,0.55,4,2.10,W
+bra-srb,Brazil vs Serbia,win,loss,0.60,4,1.80,L
+arg-mex,Argentina vs Mexico,win,win,0.65,4,1.70,W
+eng-usa,England vs USA,draw,,0.30,4,3.40,

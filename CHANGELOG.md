@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.5.0
+
+- **`loopforge eval`** — score recorded predictions against real outcomes (the deepest verify:
+  predicted vs ground truth). Reads a CSV (`id,predicted,actual,prob,stake,odds,result`) and reports
+  accuracy, calibration (Brier), and betting P&L/ROI. `--min-accuracy` makes it a verify gate, so a
+  loop that keeps predicting badly fails itself. Domain-agnostic (bets, stock calls, anything). Pair
+  it with a resolver that fetches the latest data + `loopforge schedule` to auto-validate on a
+  cadence. See `examples/eval-soccer/`.
+
 ## 0.4.0
 
 - **`loopforge schedule`** — turn a loop's declarative `[trigger].cron` into a real cron entry, so a

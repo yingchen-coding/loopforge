@@ -184,7 +184,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: yingchen-coding/loopforge@v0.4.0
+      - uses: yingchen-coding/loopforge@v0.5.0
         with:
           path: loops/        # dir of loop.toml files
           fail-at: major
@@ -197,6 +197,33 @@ Or as a plain step:
 - run: pip install git+https://github.com/yingchen-coding/loopforge
 - run: loopforge lint loops/ --score
 ```
+
+## Eval — score predictions against reality
+
+The strongest verify isn't "the command exited 0" — it's "the prediction matched what actually
+happened." `loopforge eval` scores a CSV of predictions once their real outcomes are known:
+
+```bash
+loopforge eval predictions.csv
+# predictions: 4  ·  resolved: 3  ·  pending: 1
+# accuracy: 67%  (2/3 correct)
+# calibration (Brier, lower=better): 0.228
+# P&L: +3.20  ·  staked: 12.00  ·  ROI: +26.7%
+```
+
+It's domain-agnostic — soccer bets, stock calls, anything with a `predicted` value and a later
+`actual` (plus optional `prob` for calibration and `stake`/`odds`/`result` for P&L).
+
+**Auto-validate with the latest data.** `eval` is the scoring half; close the loop by pairing it:
+
+- **act** = a *resolver* that fetches the latest real outcomes and fills in `actual`/`result`
+  (a results API, `yfinance` for stock calls, your chart for medical predictions — the domain's
+  ground truth).
+- **verify** = `loopforge eval predictions.csv --min-accuracy 0.5` — the loop fails its own gate
+  when its predictions stop beating the bar.
+- **schedule** it, and every prediction you make validates itself against reality on a cadence.
+
+See [`examples/eval-soccer/`](examples/eval-soccer/).
 
 ## Schedule it
 

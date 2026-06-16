@@ -5,6 +5,7 @@ import argparse
 import sys
 
 from . import __version__, schedule
+from . import eval as evalmod
 from .linter import lint_path
 from .models import LoopError, Severity, parse_loop
 from .report import render_human, render_json
@@ -42,6 +43,11 @@ def _build_parser() -> argparse.ArgumentParser:
     r.add_argument("path", help="path to a loop.toml")
     r.add_argument("--dry-run", action="store_true", help="print the plan without executing")
     r.add_argument("--max-iterations", type=int, default=None, help="override the iteration cap")
+
+    ev = sub.add_parser("eval", help="score recorded predictions against real outcomes (predicted vs actual)")
+    ev.add_argument("path", help="a predictions CSV (id,predicted,actual,prob,stake,odds,result)")
+    ev.add_argument("--min-accuracy", type=float, default=None,
+                    help="exit non-zero if accuracy is below this (use as a loop verify gate)")
 
     sub.add_parser("list-rules", help="print the rule catalog")
 
@@ -106,6 +112,19 @@ def _cmd_run(args: argparse.Namespace) -> int:
     return 1 if result.handback_reason == "needs-human" else 0
 
 
+def _cmd_eval(args: argparse.Namespace) -> int:
+    try:
+        report = evalmod.evaluate(evalmod.load(args.path))
+    except LoopError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    print(evalmod.render(report))
+    if not report.gate_ok(args.min_accuracy):
+        print(f"  ✖ accuracy below --min-accuracy {args.min_accuracy:.0%}", file=sys.stderr)
+        return 1
+    return 0
+
+
 def _cmd_schedule(args: argparse.Namespace) -> int:
     try:
         if args.sched_cmd == "install":
@@ -140,6 +159,7 @@ def main(argv: list[str] | None = None) -> int:
         "init": _cmd_init,
         "run": _cmd_run,
         "list-rules": _cmd_list_rules,
+        "eval": _cmd_eval,
         "schedule": _cmd_schedule,
     }
     return dispatch[args.command](args)
