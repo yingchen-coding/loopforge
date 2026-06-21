@@ -44,7 +44,9 @@ class EvalReport:
     def gate_ok(self, min_accuracy: float | None) -> bool:
         if min_accuracy is None:
             return True
-        return self.accuracy is not None and self.accuracy >= min_accuracy
+        if self.accuracy is None:
+            return True  # nothing resolved yet — no evidence of bad prediction, don't fail the tick
+        return self.accuracy >= min_accuracy
 
 
 def _num(row: dict[str, str], key: str) -> float | None:

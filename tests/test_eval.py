@@ -48,6 +48,14 @@ def test_gate():
     assert r.gate_ok(0.5) is False
 
 
+def test_gate_passes_when_nothing_resolved_yet():
+    # all rows pending → accuracy None → a --min-accuracy gate must NOT fail every tick
+    r = evaluate([{"id": "a", "predicted": "x"}, {"id": "b", "predicted": "y"}])
+    assert r.scored == 0 and r.accuracy is None
+    assert r.gate_ok(0.9) is True   # no evidence of bad prediction yet
+    assert r.gate_ok(None) is True
+
+
 def test_load_requires_predicted_column(tmp_path):
     p = tmp_path / "x.csv"
     p.write_text("id,foo\n1,2\n", encoding="utf-8")

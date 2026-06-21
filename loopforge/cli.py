@@ -122,6 +122,8 @@ def _cmd_eval(args: argparse.Namespace) -> int:
     if not report.gate_ok(args.min_accuracy):
         print(f"  ✖ accuracy below --min-accuracy {args.min_accuracy:.0%}", file=sys.stderr)
         return 1
+    if args.min_accuracy is not None and report.scored == 0:
+        print("  · --min-accuracy set but nothing resolved yet — gate passes (no evidence yet)", file=sys.stderr)
     return 0
 
 

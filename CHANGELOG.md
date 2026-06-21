@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.1
+
+- **`eval` gate fix** — `--min-accuracy` no longer fails when no predictions are resolved yet.
+  A scheduled loop whose outcomes resolve later would previously fail its gate every tick (no data
+  read as failure); now the gate passes until there is real accuracy evidence to judge. CLI prints a
+  note so the pass is explicit.
+
 ## 0.5.0
 
 - **`loopforge eval`** — score recorded predictions against real outcomes (the deepest verify:
