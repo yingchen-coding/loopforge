@@ -118,9 +118,27 @@ def parse_text(text: str, path: Path | None = None) -> Loop:
     return loop
 
 
-def parse_loop(path: str | Path) -> Loop:
-    """Read and parse a loop.toml file. Raises LoopError naming the file on any failure."""
+def resolve_loop_file(path: str | Path) -> Path:
+    """Resolve a path to a single loop file. A file is taken as-is; a directory is searched for
+    `loop.toml` / `*.loop.toml` so `run <dir>` works like `lint <dir>`. Raises LoopError if nothing
+    is found, or if a directory holds more than one loop (ambiguous — name the file)."""
     p = Path(path)
+    if p.is_file():
+        return p
+    if p.is_dir():
+        found = sorted({*p.rglob("loop.toml"), *p.rglob("*.loop.toml")}, key=str)
+        if not found:
+            raise LoopError(f"no loop definitions (loop.toml / *.loop.toml) found under {p}")
+        if len(found) > 1:
+            names = ", ".join(str(f.relative_to(p)) for f in found)
+            raise LoopError(f"{p} holds multiple loops ({names}) — name the one to run")
+        return found[0]
+    raise LoopError(f"no such loop file: {p}")
+
+
+def parse_loop(path: str | Path) -> Loop:
+    """Read and parse a loop file, or the single loop under a directory. Raises LoopError on failure."""
+    p = resolve_loop_file(path)
     try:
         text = p.read_text(encoding="utf-8")
     except FileNotFoundError as exc:

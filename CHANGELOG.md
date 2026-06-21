@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.2
+
+- **`run` accepts a directory** like `lint` does — `loopforge run mydir/` resolves the single
+  `loop.toml` inside instead of crashing with "Is a directory". Found by dogfooding (lint a dir,
+  then run it). Multiple loops in one dir → a clear "name the one to run" error.
+
 ## 0.5.1
 
 - **`eval` gate fix** — `--min-accuracy` no longer fails when no predictions are resolved yet.

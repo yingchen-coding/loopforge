@@ -18,7 +18,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from .linter import lint_text
-from .models import Loop, LoopError, Severity, parse_loop
+from .models import Loop, LoopError, Severity, parse_loop, resolve_loop_file
 
 
 @dataclass
@@ -179,7 +179,7 @@ def run(
     max_iterations: int | None = None,
 ) -> RunResult:
     """Execute a loop. Refuses to start a loop with a CRITICAL completeness finding (no brake)."""
-    path = Path(source)
+    path = resolve_loop_file(source)  # a directory resolves to its single loop.toml, like `lint`
     loop = parse_loop(path)
     root = path.parent
 

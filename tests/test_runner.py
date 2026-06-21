@@ -33,6 +33,21 @@ def test_dry_run_does_not_execute(tmp_path):
     assert result.iterations == 0
 
 
+def test_run_accepts_a_directory_like_lint(tmp_path):
+    # `loopforge run <dir>` must work like `lint <dir>` — resolve the single loop.toml inside.
+    make_loop(tmp_path, act="echo hi")          # writes <tmp>/runme/loop.toml
+    result = run(tmp_path / "runme", dry_run=True)
+    assert result.loop == "runme" and result.outcome == "dry-run"
+
+
+def test_run_directory_with_multiple_loops_is_ambiguous(tmp_path):
+    make_loop(tmp_path, act="echo a")           # <tmp>/runme/loop.toml
+    (tmp_path / "other.loop.toml").write_text(
+        (tmp_path / "runme" / "loop.toml").read_text(), encoding="utf-8")
+    with pytest.raises(LoopError, match="multiple loops"):
+        run(tmp_path, dry_run=True)
+
+
 def test_plan_lists_all_blocks(tmp_path):
     p = make_loop(tmp_path, act="echo hi")
     text = plan(parse_loop(p))
