@@ -85,11 +85,16 @@ def evaluate(rows: list[dict[str, str]]) -> EvalReport:
             if hit:
                 correct += 1
             prob = _num(row, "prob")
-            if prob is not None:
+            # Brier needs a probability in [0,1]. A confidence logged as a percent (75 for 0.75)
+            # would add a term of ~(75-1)**2 and a single such row silently wrecks the mean — so an
+            # out-of-range prob is skipped rather than allowed to corrupt the calibration score.
+            if prob is not None and 0.0 <= prob <= 1.0:
                 brier_terms.append((prob - (1.0 if hit else 0.0)) ** 2)
 
         stake, odds = _num(row, "stake"), _num(row, "odds")
-        if stake and odds and stake > 0:
+        # decimal odds must be > 1.0; at odds <= 1 a "win" pays stake*(odds-1) <= 0, which would
+        # book a winning bet as flat/negative P&L. Treat such a row as invalid odds and skip it.
+        if stake and odds and stake > 0 and odds > 1.0:
             outcome = result or ("w" if hit else "l")
             if outcome in _WIN:
                 staked += stake

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.5.3
+
+- **`eval` no longer lets one bad row silently corrupt a metric.** Two scoring bugs:
+  - A `prob` outside `[0,1]` (e.g. a confidence logged as `75` for `0.75`) added a `~(75-1)²`
+    term that wrecked the mean Brier score. Out-of-range probabilities are now skipped, so
+    calibration reflects only valid rows.
+  - Decimal odds `<= 1.0` would book a *winning* bet as flat/negative P&L (`stake*(odds-1) <= 0`).
+    Such rows are now treated as invalid odds and skipped from P&L.
+  Both found by routing a correctness review of `evaluate()` through modelbroker (review → claude).
+
 ## 0.5.2
 
 - **`run` accepts a directory** like `lint` does — `loopforge run mydir/` resolves the single

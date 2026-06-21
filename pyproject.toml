@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "loopforge"
-version = "0.5.0"
+version = "0.5.3"
 description = "Loop Engineering toolkit: lint, scaffold, and run autonomous agent loops against the six blocks a real loop needs."
 readme = "README.md"
 requires-python = ">=3.11"

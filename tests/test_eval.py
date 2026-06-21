@@ -34,6 +34,26 @@ def test_brier_and_pnl_for_betting_rows():
     assert abs(r.roi - 0.05) < 1e-6
 
 
+def test_out_of_range_prob_does_not_corrupt_brier():
+    # a confidence mistakenly logged as a percent (75 for 0.75) must not wreck the mean Brier;
+    # it's skipped, so calibration reflects only the valid [0,1] rows.
+    rows = [
+        {"id": "a", "predicted": "win", "actual": "win", "prob": "0.80"},
+        {"id": "b", "predicted": "win", "actual": "loss", "prob": "75"},   # percent — invalid
+    ]
+    r = evaluate(rows)
+    assert abs(r.brier - 0.04) < 1e-6   # only (0.80-1)^2 = 0.04; the 75 row is ignored, not (75-0)^2
+
+
+def test_invalid_decimal_odds_skip_pnl():
+    # decimal odds <= 1.0 can't pay a positive return on a win; such a row is skipped, not booked
+    # as a flat/negative "win".
+    rows = [{"id": "a", "predicted": "win", "actual": "win", "stake": "4", "odds": "0.5", "result": "W"}]
+    r = evaluate(rows)
+    assert r.pnl == 0.0 and r.staked == 0.0   # invalid odds → not settled
+    assert r.roi is None
+
+
 def test_result_only_row_resolves_for_pnl_but_not_accuracy():
     rows = [{"id": "a", "predicted": "win", "actual": "", "stake": "4", "odds": "2.0", "result": "W"}]
     r = evaluate(rows)
