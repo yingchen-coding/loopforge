@@ -118,12 +118,14 @@ command = "pytest -q"
 
 [memory]                        # 6. the ledger the repo keeps
 file = "memory/ledger.md"
+trace_file = "memory/trace.jsonl" # full commands, outputs, verification, owner, and transitions
 
 [budget]                        # cost brake
 max_tokens = 200000
 max_cost_usd = 5.0
 
 [handback]                      # human brake
+owner = "platform-oncall"       # a concrete person/team owns acceptance and responsibility
 on = ["budget-exceeded", "verify-failed-twice", "goal-reached", "needs-human"]
 notify = "echo"
 ```
@@ -153,6 +155,7 @@ $ loopforge list-rules
 | `L010` | major | no act command — the loop does nothing |
 | `L012` | minor | no goal — can't tell progress from motion |
 | `L013` | major | referenced skills/memory/prompt file doesn't exist on disk |
+| `L014` | major | no named owner — the loop can finish, but nobody owns acceptance |
 
 Only the runaway is `critical`, on purpose: a loop that can't stop is the one failure that turns
 "unattended" into "expensive." Everything else degrades quality; that one burns money.

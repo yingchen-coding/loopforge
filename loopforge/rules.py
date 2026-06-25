@@ -189,6 +189,19 @@ def has_act_command(loop: Loop) -> list[Finding]:
     return []
 
 
+@rule("L014", "handback: a named person owns acceptance")
+def has_accountable_owner(loop: Loop) -> list[Finding]:
+    owner = loop.table("handback").get("owner")
+    if not isinstance(owner, str) or not owner.strip():
+        return [Finding("L014", Severity.MAJOR, "handback",
+                        "No accountable owner — the loop can notify 'a human', but nobody is "
+                        "named to accept the result, stop the run, or carry responsibility for "
+                        "the output.",
+                        'Add [handback] owner = "name-or-team" and route notifications to that '
+                        "person or on-call role.")]
+    return []
+
+
 @rule("L011", "trigger: the trigger is actually wired up")
 def trigger_is_configured(loop: Loop) -> list[Finding]:
     trig = loop.table("trigger")

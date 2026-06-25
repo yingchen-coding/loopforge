@@ -106,6 +106,11 @@ def test_missing_handback_flags_l009():
     assert "L009" in codes(without("handback"))
 
 
+def test_missing_owner_flags_l014():
+    text = COMPLETE.replace('owner = "platform-oncall"\n', "")
+    assert "L014" in codes(text)
+
+
 def test_missing_act_command_flags_l010():
     assert "L010" in codes(without("act"))
 

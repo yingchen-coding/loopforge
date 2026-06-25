@@ -20,11 +20,13 @@ prompt_file = "prompts/act.md"
 command = "pytest -q"
 [memory]
 file = "memory/ledger.md"
+trace_file = "memory/trace.jsonl"
 [budget]
 max_tokens = 100000
 max_seconds = 600
 max_cost_usd = 2.0
 [handback]
+owner = "platform-oncall"
 on = ["budget-exceeded", "needs-human"]
 notify = "echo"
 """

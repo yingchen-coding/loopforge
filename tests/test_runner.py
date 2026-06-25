@@ -1,3 +1,4 @@
+import json
 import subprocess
 from pathlib import Path
 
@@ -53,6 +54,7 @@ def test_plan_lists_all_blocks(tmp_path):
     text = plan(parse_loop(p))
     for key in ("trigger", "isolation", "skills", "act", "verify", "memory", "handback"):
         assert key in text
+    assert "owner: project-owner" in text
 
 
 def test_goal_reached_stops_and_records(tmp_path):
@@ -85,6 +87,18 @@ def test_ledger_records_action_and_outcome_separately(tmp_path):
     ledger = (p.parent / "memory" / "ledger.md").read_text()
     assert "DID-A-THING" in ledger  # the summary column = what act did
     assert "| ok |" in ledger or "| goal-reached |" in ledger  # distinct outcome column
+
+
+def test_trace_records_act_verify_owner_and_state_transition(tmp_path):
+    p = make_loop(tmp_path, act="echo DID-A-THING", verify="true")
+    run(p, max_iterations=1)
+    rows = (p.parent / "memory" / "trace.jsonl").read_text().splitlines()
+    trace = json.loads(rows[-1])
+    assert trace["act"]["output"].strip() == "DID-A-THING"
+    assert trace["verify"]["passed"] is True
+    assert trace["owner"] == "project-owner"
+    assert trace["outcome"] == "ok"
+    assert trace["started_at"] and trace["finished_at"]
 
 
 def test_reviewer_command_sees_act_output(tmp_path):

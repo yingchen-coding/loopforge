@@ -39,6 +39,7 @@ require = "exit-zero"
 # 6. MEMORY — the ledger the repo keeps. The model forgets; the repo does not.
 [memory]
 file = "memory/ledger.md"
+trace_file = "memory/trace.jsonl"  # full act/verify state transitions for audit and recovery
 
 # COST BRAKE — a per-run ceiling so the loop can't burn budget unbounded.
 [budget]
@@ -48,6 +49,7 @@ max_cost_usd = 5.0
 
 # HUMAN BRAKE — conditions that stop and hand control back to a person.
 [handback]
+owner = "project-owner"       # person/team accountable for accepting the result
 on = ["budget-exceeded", "verify-failed-twice", "goal-reached", "needs-human"]
 notify = "echo"              # any command; receives a one-line status on stdin
 '''

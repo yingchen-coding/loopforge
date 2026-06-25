@@ -31,5 +31,6 @@ max_seconds = 1800
 max_cost_usd = 5.0
 
 [handback]
+owner = "ci-oncall"
 on = ["budget-exceeded", "verify-failed-twice", "goal-reached", "needs-human"]
 notify = "echo"

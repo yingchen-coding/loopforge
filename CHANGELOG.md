@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Require a named handback owner so autonomous output always returns to an accountable person or
+  team; include that owner in dry-run plans and notifications.
+- Add an optional JSONL execution trace with complete act/verify commands, outputs, timestamps,
+  worktree, outcome, and accountable owner for harness-level evaluation and recovery.
+
 ## 0.5.3
 
 - **`eval` no longer lets one bad row silently corrupt a metric.** Two scoring bugs:

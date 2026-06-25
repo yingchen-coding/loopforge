@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import contextlib
 import datetime as _dt
+import json
 import os
 import shlex
 import subprocess
@@ -117,6 +118,17 @@ def _append_ledger(loop: Loop, root: Path, log: IterationLog) -> None:
         fh.write(row)
 
 
+def _append_trace(loop: Loop, root: Path, payload: dict[str, object]) -> None:
+    """Persist the full machine-readable transition, not only the human ledger summary."""
+    rel = loop.table("memory").get("trace_file")
+    if not isinstance(rel, str) or not rel:
+        return
+    path = root / rel
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as fh:
+        fh.write(json.dumps(payload, ensure_ascii=True, sort_keys=True) + "\n")
+
+
 def _git(root: Path, *args: str) -> tuple[int, str]:
     proc = subprocess.run(  # noqa: S603,S607 - fixed git subcommands, no user input in argv[0]
         ["git", "-C", str(root), *args], capture_output=True, text=True
@@ -168,6 +180,7 @@ def plan(loop: Loop) -> str:
         f"memory: {loop.table('memory').get('file', '(none)')}",
         f"budget: {loop.table('budget') or '(none)'}",
         f"handback: {loop.table('handback').get('on', []) or '(none)'}",
+        f"owner: {loop.table('handback').get('owner', '(none)')}",
     ]
     return "\n".join(lines)
 
@@ -225,17 +238,20 @@ def run(
             break
 
         remaining = deadline - time.monotonic() if deadline else None
+        iteration_started = _dt.datetime.now(_dt.UTC).isoformat()
         rc, out = _run_command(act_cmd, context, workdir, remaining)
 
         # verify is independent: a `command` is a test/build (no prompt); a `reviewer_command` is a
         # second model that must SEE the act output to review it.
         verified: bool | None = None
+        verify_rc: int | None = None
+        verify_out = ""
         if verify_command:
-            vrc, _ = _run_command(verify_command, None, workdir, remaining)
-            verified = vrc == 0
+            verify_rc, verify_out = _run_command(verify_command, None, workdir, remaining)
+            verified = verify_rc == 0
         elif reviewer_command:
-            vrc, _ = _run_command(reviewer_command, out, workdir, remaining)
-            verified = vrc == 0
+            verify_rc, verify_out = _run_command(reviewer_command, out, workdir, remaining)
+            verified = verify_rc == 0
         if verified is not None:
             consecutive_failures = 0 if verified else consecutive_failures + 1
 
@@ -253,6 +269,22 @@ def run(
         result.logs.append(log)
         result.iterations = i
         _append_ledger(loop, root, log)
+        _append_trace(loop, root, {
+            "act": {"command": act_cmd, "exit_code": rc, "output": out},
+            "finished_at": _dt.datetime.now(_dt.UTC).isoformat(),
+            "goal": loop.goal,
+            "iteration": i,
+            "outcome": outcome,
+            "owner": loop.table("handback").get("owner"),
+            "started_at": iteration_started,
+            "verify": {
+                "command": verify_command or reviewer_command,
+                "exit_code": verify_rc,
+                "output": verify_out,
+                "passed": verified,
+            },
+            "worktree": result.worktree,
+        })
 
         if "NEEDS-HUMAN" in out:
             result.outcome, result.handback_reason = "handback", "needs-human"
@@ -274,8 +306,9 @@ def _notify(loop: Loop, root: Path, result: RunResult) -> None:
     cmd = loop.table("handback").get("notify")
     if not cmd:
         return
+    owner = loop.table("handback").get("owner", "unassigned")
     status = (
-        f"loop={result.loop} outcome={result.outcome} "
+        f"loop={result.loop} owner={owner} outcome={result.outcome} "
         f"reason={result.handback_reason} iters={result.iterations}"
     )
     # notification is best-effort; a missing notifier must not crash a finished run
