@@ -20,6 +20,12 @@ cron job that calls an agent. It has **six moving parts**, and most homemade loo
 of them — usually the ones that stop it from burning your budget or shipping unverified work.
 loopforge makes those parts checkable. Deterministic, zero-dependency, no API key, no LLM call.
 
+### Star this if
+
+- You are building autonomous coding, content, research, or ops loops and need hard stops.
+- You want an architecture checklist that catches missing verify, memory, isolation, and handback.
+- You want a CI gate before an agent loop runs unattended.
+
 ### What you'd use it for
 
 - **You're building an autonomous loop** (a CI-fixer, a content-curation bot, a nightly refactor).
@@ -178,6 +184,12 @@ post are people who got a surprise bill. Two honest limits:
 
 A ready-made GitHub Action ships in this repo (`action.yml`) — lint your loop definitions on every
 PR so a loop can't regress into a runaway unnoticed:
+
+## Local Review
+
+```bash
+scripts/pr_review_check.sh
+```
 
 ```yaml
 name: loops
