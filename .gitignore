@@ -13,4 +13,5 @@ venv/
 .coverage
 htmlcov/
 .loopforge-run/
+tmp-loopforge-*/
 LAUNCH-KIT.private.md
