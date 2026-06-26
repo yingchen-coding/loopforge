@@ -116,7 +116,7 @@ mode = "worktree"
 files = ["skills/project.md"]
 
 [act]                           # 4. the agent invocation (harness-agnostic)
-command = "claude -p {prompt}"
+command = "agent-cli run {prompt}"
 prompt_file = "prompts/act.md"
 
 [verify]                        # 5. an INDEPENDENT check — never the same command as act
@@ -199,7 +199,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: yingchen-coding/loopforge@v0.5.0
+      - uses: yingchen-coding/loopforge@v0.5.3
         with:
           path: loops/        # dir of loop.toml files
           fail-at: major
@@ -265,7 +265,7 @@ independent check. For agent definitions, pair it with [agentguard](https://gith
 
 ```toml
 [act]
-command = "claude -p {prompt}"          # the agent does the work
+command = "agent-cli run {prompt}"      # the agent does the work
 [verify]
 command = "agentguard agents/ --fail-at critical"   # an independent reviewer gates it
 ```
@@ -275,11 +275,11 @@ loop that keeps every agent you own clean — the loop engine driving the review
 
 ## Why this exists
 
-Boris Cherny (Head of Claude Code) on his actual job: *"I write loops."* Addy Osmani (Google) wrote
-the piece that named the practice and laid out the building blocks this tool encodes. The idea is
-simple and the failure modes are predictable — so they should be **lintable**, the same way a type
-checker catches the bugs you'd otherwise find in production. That's all loopforge is: the six blocks,
-made checkable, with a scaffolder and a safe runner attached.
+Loop Engineering is useful because the failure modes are predictable: runaway budget, duplicated
+work, missing memory, self-review, and no human owner. Predictable failure modes should be
+**lintable**, the same way a type checker catches the bugs you'd otherwise find in production.
+That's all loopforge is: the six blocks, made checkable, with a scaffolder and a safe runner
+attached.
 
 ## Install
 

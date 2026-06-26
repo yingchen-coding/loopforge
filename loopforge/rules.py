@@ -184,7 +184,7 @@ def has_act_command(loop: Loop) -> list[Finding]:
         return [Finding("L010", Severity.MAJOR, "act",
                         "No act command — the loop has no agent invocation, so there is nothing for "
                         "it to run each iteration.",
-                        'Add [act] command = "claude -p {prompt}" (or any agent CLI) and a '
+                        'Add [act] command = "agent-cli run {prompt}" (or any agent CLI) and a '
                         "prompt_file.")]
     return []
 

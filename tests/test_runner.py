@@ -13,7 +13,7 @@ def make_loop(tmp_path, act: str, verify: str = "true", max_iter: int = 5):
     root = init("runme", tmp_path)
     p = root / "loop.toml"
     t = p.read_text()
-    t = t.replace('command = "claude -p {prompt}"', f"command = {act!r}")
+    t = t.replace('command = "agent-cli run {prompt}"', f"command = {act!r}")
     t = t.replace('command = "pytest -q"', f"command = {verify!r}")
     t = t.replace("max_iterations = 20", f"max_iterations = {max_iter}")
     p.write_text(t)
@@ -106,7 +106,7 @@ def test_reviewer_command_sees_act_output(tmp_path):
     root = init("rev", tmp_path)
     p = root / "loop.toml"
     t = p.read_text()
-    t = t.replace('command = "claude -p {prompt}"', 'command = "echo HELLO"')
+    t = t.replace('command = "agent-cli run {prompt}"', 'command = "echo HELLO"')
     t = t.replace('command = "pytest -q"', 'reviewer_command = "grep HELLO"')
     p.write_text(t)
     result = run(p, max_iterations=1)
@@ -117,7 +117,7 @@ def test_reviewer_command_fails_when_output_is_wrong(tmp_path):
     root = init("rev2", tmp_path)
     p = root / "loop.toml"
     t = p.read_text()
-    t = t.replace('command = "claude -p {prompt}"', 'command = "echo BYE"')
+    t = t.replace('command = "agent-cli run {prompt}"', 'command = "echo BYE"')
     t = t.replace('command = "pytest -q"', 'reviewer_command = "grep HELLO"')
     p.write_text(t)
     result = run(p, max_iterations=1)
@@ -132,7 +132,7 @@ def test_worktree_isolation_runs_in_worktree_ledger_stays_home(tmp_path):
     root = init("iso", repo)  # scaffold uses isolation mode = worktree
     p = root / "loop.toml"
     t = p.read_text()
-    t = t.replace('command = "claude -p {prompt}"', 'command = "touch MARKER"')
+    t = t.replace('command = "agent-cli run {prompt}"', 'command = "touch MARKER"')
     t = t.replace('command = "pytest -q"', 'command = "true"')
     p.write_text(t)
     subprocess.run(["git", "-C", str(repo), "add", "-A"], check=True, capture_output=True)
