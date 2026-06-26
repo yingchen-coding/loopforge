@@ -27,7 +27,7 @@ files = ["skills/project.md"]
 
 # 4. ACT — the agent invocation. {{prompt}} is replaced with skills + memory + your prompt file.
 [act]
-command = "claude -p {{prompt}}"
+command = "agent-cli run {{prompt}}"
 prompt_file = "prompts/act.md"
 parallel = false
 

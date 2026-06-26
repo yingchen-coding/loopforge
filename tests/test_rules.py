@@ -31,7 +31,7 @@ def test_missing_verify_flags_l004():
 
 
 def test_self_review_flags_l005():
-    text = COMPLETE.replace('command = "pytest -q"', 'command = "claude -p {prompt}"')
+    text = COMPLETE.replace('command = "pytest -q"', 'command = "agent-cli run {prompt}"')
     assert "L005" in codes(text)
 
 

@@ -14,7 +14,7 @@ mode = "worktree"
 [skills]
 files = ["skills/project.md"]
 [act]
-command = "claude -p {prompt}"
+command = "agent-cli run {prompt}"
 prompt_file = "prompts/act.md"
 [verify]
 command = "pytest -q"

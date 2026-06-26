@@ -45,6 +45,9 @@ python -m pip install -e '.[dev]'
 mkdir -p /tmp/loopforge-review
 loopforge init ci-green --dest /tmp/loopforge-review --force >/tmp/loopforge-review-init.txt
 loopforge lint /tmp/loopforge-review/ci-green --score >/tmp/loopforge-review-lint.txt
+package_dir="$(mktemp -d)"
+python -m build --sdist --wheel --outdir "$package_dir"
+python -m twine check "$package_dir"/*
 agentguard --publish-check --score --no-color .
 
 python - <<'PY'
