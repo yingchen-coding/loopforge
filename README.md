@@ -13,18 +13,18 @@
        alt="loopforge linting a 'nightly-cleanup' loop that is really just a cron job: it flags a critical no-brake runaway plus missing verification, memory, and handback (grade F), then a scaffolded ci-green loop passes with all six blocks present (grade A).">
 </p>
 
-**loopforge is a linter, scaffolder, and runner for agent loops** — the autonomous "wake up → do work
-→ check it → record it → decide whether to continue" systems that people are replacing one-shot
-prompting with. The catch (per Google's Addy Osmani, who named the practice): a real loop isn't a
-cron job that calls an agent. It has **six moving parts**, and most homemade loops are missing four
-of them — usually the ones that stop it from burning your budget or shipping unverified work.
-loopforge makes those parts checkable. Deterministic, zero-dependency, no API key, no LLM call.
+**loopforge is a linter, scaffolder, and runner for agent loops** — the autonomous systems that wake
+up, do work, verify it, remember it, and decide whether to continue. The catch (per Google's Addy
+Osmani, who named the practice): a real loop is not a cron job that calls an agent. It has **six
+moving parts**, and most homemade loops are missing the pieces that stop budget burn, duplicated
+work, and unverified changes. loopforge makes those parts checkable. Deterministic,
+zero-dependency, no API key, no LLM call.
 
 ### Star this if
 
-- You are building autonomous coding, content, research, or ops loops and need hard stops.
-- You want an architecture checklist that catches missing verify, memory, isolation, and handback.
-- You want a CI gate before an agent loop runs unattended.
+- You are about to let an agent run unattended and want brakes before budget burns.
+- You want missing verify, memory, isolation, and handback caught in CI.
+- You want a complete loop scaffold instead of another cron job with a prompt.
 
 ### What you'd use it for
 
