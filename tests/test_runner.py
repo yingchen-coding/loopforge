@@ -127,7 +127,12 @@ def test_reviewer_command_fails_when_output_is_wrong(tmp_path):
 def test_worktree_isolation_runs_in_worktree_ledger_stays_home(tmp_path):
     repo = tmp_path / "repo"
     repo.mkdir()
-    for args in (["init", "-q"], ["config", "user.email", "t@t"], ["config", "user.name", "t"]):
+    for args in (
+        ["init", "-q"],
+        ["config", "core.hooksPath", "/dev/null"],
+        ["config", "user.email", "t@t"],
+        ["config", "user.name", "t"],
+    ):
         subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
     root = init("iso", repo)  # scaffold uses isolation mode = worktree
     p = root / "loop.toml"
