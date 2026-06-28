@@ -130,8 +130,11 @@ def _append_trace(loop: Loop, root: Path, payload: dict[str, object]) -> None:
 
 
 def _git(root: Path, *args: str) -> tuple[int, str]:
+    env = dict(os.environ)
+    for key in ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_PREFIX"):
+        env.pop(key, None)
     proc = subprocess.run(  # noqa: S603,S607 - fixed git subcommands, no user input in argv[0]
-        ["git", "-C", str(root), *args], capture_output=True, text=True
+        ["git", "-C", str(root), *args], capture_output=True, text=True, env=env
     )
     return proc.returncode, (proc.stdout or "") + (proc.stderr or "")
 
@@ -149,9 +152,9 @@ def _setup_worktree(loop: Loop, root: Path) -> Path | None:
         return None  # not a git repo — can't isolate; caller falls back to root
     repo_top = Path(top.strip())
     wt = Path(tempfile.mkdtemp(prefix="loopforge-wt-"))
-    branch = f"loopforge/{loop.name}-{int(time.time())}"
-    if _git(root, "worktree", "add", "-b", branch, str(wt))[0] != 0:
-        return None
+    rc, output = _git(root, "worktree", "add", "--detach", str(wt), "HEAD")
+    if rc != 0:
+        raise LoopError(f"failed to create isolated git worktree: {output.strip()}")
     # run at the loop's location *inside* the worktree, so relative paths still resolve
     rel = root.resolve().relative_to(repo_top.resolve())
     target = wt / rel

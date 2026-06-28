@@ -144,6 +144,7 @@ def test_worktree_isolation_runs_in_worktree_ledger_stays_home(tmp_path):
     subprocess.run(["git", "-C", str(repo), "commit", "-qm", "init"], check=True, capture_output=True)
 
     result = run(p, max_iterations=1)
+    wt = None
     try:
         assert result.worktree is not None
         wt = Path(result.worktree)
@@ -153,10 +154,11 @@ def test_worktree_isolation_runs_in_worktree_ledger_stays_home(tmp_path):
         # memory is written back to the ORIGINAL repo so the record survives the worktree
         assert "| 1 |" in (root / "memory" / "ledger.md").read_text()
     finally:
-        subprocess.run(
-            ["git", "-C", str(repo), "worktree", "remove", "--force", str(wt.parent)],
-            capture_output=True,
-        )
+        if wt is not None:
+            subprocess.run(
+                ["git", "-C", str(repo), "worktree", "remove", "--force", str(wt.parent)],
+                capture_output=True,
+            )
 
 
 def test_max_iterations_override(tmp_path):
