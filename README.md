@@ -185,11 +185,6 @@ post are people who got a surprise bill. Two honest limits:
 A ready-made GitHub Action ships in this repo (`action.yml`) — lint your loop definitions on every
 PR so a loop can't regress into a runaway unnoticed:
 
-## Local Review
-
-```bash
-scripts/pr_review_check.sh
-```
 
 ```yaml
 name: loops

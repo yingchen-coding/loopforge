@@ -15,3 +15,5 @@ htmlcov/
 .loopforge-run/
 tmp-loopforge-*/
 LAUNCH-KIT.private.md
+
+scripts/pr_review_check.sh
