@@ -63,8 +63,18 @@ def _read_context(loop: Loop, root: Path) -> str:
     return "\n\n".join(parts)
 
 
+def _time_left(deadline: float | None) -> float | None:
+    """Seconds remaining until the wall-clock budget deadline (None = no budget)."""
+    if deadline is None:
+        return None
+    return deadline - time.monotonic()
+
+
 def _run_command(command: str, prompt: str | None, cwd: Path, timeout: float | None) -> tuple[int, str]:
     """Run a command. {prompt} is replaced with a temp file path; otherwise prompt goes to stdin."""
+    if timeout is not None and timeout <= 0:
+        # the wall-clock budget is already spent — don't spawn a process just to kill it
+        return 124, "timeout"
     stdin_text: str | None = None
     tmp: Path | None = None
     try:
@@ -240,20 +250,21 @@ def run(
             result.handback_reason = "budget-exceeded"
             break
 
-        remaining = deadline - time.monotonic() if deadline else None
         iteration_started = _dt.datetime.now(_dt.UTC).isoformat()
-        rc, out = _run_command(act_cmd, context, workdir, remaining)
+        rc, out = _run_command(act_cmd, context, workdir, _time_left(deadline))
 
         # verify is independent: a `command` is a test/build (no prompt); a `reviewer_command` is a
-        # second model that must SEE the act output to review it.
+        # second model that must SEE the act output to review it. Recompute the time budget here —
+        # act may have consumed most of it, and reusing the pre-act figure would let verify run the
+        # full window again, overrunning max_seconds by up to 2x.
         verified: bool | None = None
         verify_rc: int | None = None
         verify_out = ""
         if verify_command:
-            verify_rc, verify_out = _run_command(verify_command, None, workdir, remaining)
+            verify_rc, verify_out = _run_command(verify_command, None, workdir, _time_left(deadline))
             verified = verify_rc == 0
         elif reviewer_command:
-            verify_rc, verify_out = _run_command(reviewer_command, out, workdir, remaining)
+            verify_rc, verify_out = _run_command(reviewer_command, out, workdir, _time_left(deadline))
             verified = verify_rc == 0
         if verified is not None:
             consecutive_failures = 0 if verified else consecutive_failures + 1

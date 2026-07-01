@@ -167,3 +167,47 @@ def test_max_iterations_override(tmp_path):
     result = run(p, max_iterations=3)
     assert result.iterations == 3
     assert result.handback_reason == "max-iterations"
+
+
+def test_run_command_short_circuits_when_budget_is_spent():
+    # A non-positive remaining budget must NOT spawn the process — it returns a timeout immediately.
+    # If it spawned, `echo` would return (0, "hi"); the guard makes it (124, "timeout").
+    from loopforge.runner import _run_command
+    rc, out = _run_command("echo hi", None, Path("."), timeout=-0.5)
+    assert rc == 124
+    assert out == "timeout"
+
+
+def test_time_left_counts_down_from_deadline():
+    import time as _t
+
+    from loopforge.runner import _time_left
+    assert _time_left(None) is None
+    deadline = _t.monotonic() + 10
+    left = _time_left(deadline)
+    assert left is not None and 0 < left <= 10
+    assert _time_left(_t.monotonic() - 1) < 0  # already past the deadline
+
+
+def test_verify_budget_is_recomputed_after_act(tmp_path, monkeypatch):
+    # Regression: verify used to reuse the pre-act time budget, so it could run a full second window
+    # after act already consumed max_seconds. With the fix, verify's timeout is recomputed from the
+    # shared deadline AFTER act ran — so it is strictly less than act's, never the original window.
+    import loopforge.runner as runner
+
+    p = make_loop(tmp_path, act="echo working", verify="echo verifying", max_iter=1)  # default max_seconds
+
+    calls = []
+    real = runner._run_command
+
+    def spy(command, prompt, cwd, timeout):
+        calls.append((command, timeout))
+        return real(command, prompt, cwd, timeout)
+
+    monkeypatch.setattr(runner, "_run_command", spy)
+    runner.run(p)
+
+    act_timeout = next(to for cmd, to in calls if cmd == "echo working")
+    verify_timeout = next(to for cmd, to in calls if cmd == "echo verifying")
+    assert act_timeout is not None and verify_timeout is not None  # deadline enforced on both
+    assert verify_timeout < act_timeout  # recomputed after act, so strictly less time remains
