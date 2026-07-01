@@ -286,15 +286,6 @@ git clone https://github.com/yingchen-coding/loopforge && cd loopforge && pip in
 
 Python ≥ 3.11, zero runtime dependencies.
 
-## Local Review Gate
-
-```bash
-scripts/pr_review_check.sh
-```
-
-This runs compile checks, tests, Ruff when available, secret scanning, and commit-history
-attribution checks. GitHub runs the same gate through the `PR Review Gate` workflow.
-
 ## License
 
 MIT © Ying Chen
